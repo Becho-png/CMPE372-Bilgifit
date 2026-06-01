@@ -138,7 +138,7 @@
 
     showBanner("loginBanner", "Welcome back! Redirecting to dashboard…", "success");
     setTimeout(() => {
-      window.location.href = "dashboard.html";
+      window.location.href = "/dashboard";
     }, 900);
   });
 
