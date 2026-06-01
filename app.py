@@ -1,6 +1,6 @@
 import os
 import psycopg2
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -13,8 +13,12 @@ def get_db_connection():
     return psycopg2.connect(DATABASE_URL)
 
 @app.route("/")
-def home():
-    return {"status": "BilgiFit API Running"}
+def index():
+    return render_template("index.html")
+
+@app.route("/dashboard")
+def dashboard():
+    return render_template("dashboard.html")
 
 @app.route("/register", methods=["POST"])
 def register():
@@ -27,8 +31,8 @@ def register():
     if not fullname or not email or not password:
         return jsonify({"success": False, "message": "All fields are required."}), 400
 
-    if not email.endswith("@bilgi.edu.tr"):
-        return jsonify({"success": False, "message": "Only @bilgi.edu.tr emails are allowed."}), 400
+    if not email.lower().endswith("@bilgi.edu.tr"):
+        return jsonify({"success": False, "message": "Only @bilgi.edu.tr emails are accepted."}), 400
 
     hashed_password = generate_password_hash(password)
 
@@ -59,9 +63,6 @@ def login():
 
     email = data.get("email")
     password = data.get("password")
-
-    if not email or not password:
-        return jsonify({"success": False, "message": "Email and password are required."}), 400
 
     try:
         conn = get_db_connection()
