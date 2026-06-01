@@ -29,10 +29,21 @@ def register():
     password = data.get("password")
 
     if not fullname or not email or not password:
-        return jsonify({"success": False, "message": "All fields are required."}), 400
+        return jsonify({
+            "success": False,
+            "message": "All fields are required."
+        }), 400
 
-    if not email.lower().endswith("@bilgi.edu.tr"):
-        return jsonify({"success": False, "message": "Only @bilgi.edu.tr emails are accepted."}), 400
+    allowed_domains = (
+        "@bilgi.edu.tr",
+        "@bilgiedu.net"
+    )
+
+    if not email.lower().endswith(allowed_domains):
+        return jsonify({
+            "success": False,
+            "message": "Only @bilgi.edu.tr or @bilgiedu.net emails are accepted."
+        }), 400
 
     hashed_password = generate_password_hash(password)
 
@@ -49,13 +60,22 @@ def register():
         cur.close()
         conn.close()
 
-        return jsonify({"success": True, "message": "Account created successfully."}), 201
+        return jsonify({
+            "success": True,
+            "message": "Account created successfully."
+        }), 201
 
     except psycopg2.errors.UniqueViolation:
-        return jsonify({"success": False, "message": "This email is already registered."}), 409
+        return jsonify({
+            "success": False,
+            "message": "This email is already registered."
+        }), 409
 
     except Exception as e:
-        return jsonify({"success": False, "message": str(e)}), 500
+        return jsonify({
+            "success": False,
+            "message": str(e)
+        }), 500
 
 @app.route("/login", methods=["POST"])
 def login():
