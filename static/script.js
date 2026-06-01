@@ -1,9 +1,9 @@
 // BilgiFit — Login / Register interactive logic
-// Demonstrates: required field validation, incorrect input handling, clear error messages.
 
 (function () {
   const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   const MIN_PASSWORD = 6;
+  const ALLOWED_EMAIL_RE = /@(bilgi\.edu\.tr|bilgiedu\.net)$/i;
 
   const tabs = document.querySelectorAll(".tab");
   const loginForm = document.getElementById("loginForm");
@@ -24,11 +24,10 @@
       hero: "Join BilgiFit today.",
       lede: "Create your campus account to start booking gym slots, classes and personal trainers.",
       title: "Create account",
-      sub: "Use your @bilgi.edu.tr email to sign up.",
+      sub: "Use your @bilgi.edu.tr or @bilgiedu.net email to sign up.",
     },
   };
 
-  /* ---------- TAB SWITCHING ---------- */
   tabs.forEach((tab) => {
     tab.addEventListener("click", () => {
       const target = tab.dataset.tab;
@@ -55,7 +54,6 @@
     });
   });
 
-  /* ---------- VALIDATION HELPERS ---------- */
   function setError(inputId, message) {
     const input = document.getElementById(inputId);
     if (!input) return;
@@ -94,15 +92,13 @@
     el.classList.remove("is-success", "is-error");
   }
 
-  /* ---------- LIVE-CLEAR ERRORS ON INPUT ---------- */
   [loginForm, registerForm].forEach((form) => {
     form.querySelectorAll("input").forEach((input) => {
       input.addEventListener("input", () => clearError(input.id));
     });
   });
 
-  /* ---------- LOGIN SUBMIT ---------- */
-  loginForm.addEventListener("submit", (e) => {
+  loginForm.addEventListener("submit", async (e) => {
     e.preventDefault();
     clearAllErrors(loginForm);
     hideBanner("loginBanner");
@@ -118,6 +114,9 @@
     } else if (!EMAIL_RE.test(email)) {
       setError("loginEmail", "Please enter a valid email address.");
       valid = false;
+    } else if (!ALLOWED_EMAIL_RE.test(email)) {
+      setError("loginEmail", "Use your @bilgi.edu.tr or @bilgiedu.net campus email.");
+      valid = false;
     }
 
     if (!password) {
@@ -130,35 +129,53 @@
 
     if (!valid) return;
 
-    // Demo "authentication" — accepts any *@bilgi.edu.tr email
-    if (!/@bilgi\.edu\.tr$/i.test(email)) {
-      showBanner("loginBanner", "Use your @bilgi.edu.tr campus email to log in.", "error");
-      return;
-    }
+    try {
+      const response = await fetch("/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          email: email,
+          password: password
+        })
+      });
 
-    showBanner("loginBanner", "Welcome back! Redirecting to dashboard…", "success");
-    setTimeout(() => {
-      window.location.href = "/dashboard";
-    }, 900);
+      const data = await response.json();
+
+      if (!response.ok) {
+        showBanner("loginBanner", data.message || "Login failed.", "error");
+        return;
+      }
+
+      localStorage.setItem("bilgifitUser", JSON.stringify(data.user));
+      showBanner("loginBanner", "Login successful! Redirecting...", "success");
+
+      setTimeout(() => {
+        window.location.href = "/dashboard";
+      }, 900);
+
+    } catch (error) {
+      showBanner("loginBanner", "Server connection failed.", "error");
+    }
   });
 
-  /* ---------- REGISTER SUBMIT ---------- */
-  registerForm.addEventListener("submit", (e) => {
+  registerForm.addEventListener("submit", async (e) => {
     e.preventDefault();
     clearAllErrors(registerForm);
     hideBanner("registerBanner");
 
-    const name = document.getElementById("regName").value.trim();
+    const fullname = document.getElementById("regName").value.trim();
     const email = document.getElementById("regEmail").value.trim();
     const password = document.getElementById("regPassword").value;
     const confirm = document.getElementById("regConfirm").value;
 
     let valid = true;
 
-    if (!name) {
+    if (!fullname) {
       setError("regName", "Full name is required.");
       valid = false;
-    } else if (name.length < 2) {
+    } else if (fullname.length < 2) {
       setError("regName", "Please enter your full name.");
       valid = false;
     }
@@ -169,8 +186,8 @@
     } else if (!EMAIL_RE.test(email)) {
       setError("regEmail", "Please enter a valid email address.");
       valid = false;
-    } else if (!/@bilgi\.edu\.tr$/i.test(email)) {
-      setError("regEmail", "Only @bilgi.edu.tr emails are accepted.");
+    } else if (!ALLOWED_EMAIL_RE.test(email)) {
+      setError("regEmail", "Only @bilgi.edu.tr or @bilgiedu.net emails are accepted.");
       valid = false;
     }
 
@@ -192,7 +209,31 @@
 
     if (!valid) return;
 
-    showBanner("registerBanner", "Account created! You can now log in.", "success");
-    registerForm.reset();
+    try {
+      const response = await fetch("/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          fullname: fullname,
+          email: email,
+          password: password
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        showBanner("registerBanner", data.message || "Registration failed.", "error");
+        return;
+      }
+
+      showBanner("registerBanner", "Account created! You can now log in.", "success");
+      registerForm.reset();
+
+    } catch (error) {
+      showBanner("registerBanner", "Server connection failed.", "error");
+    }
   });
 })();
