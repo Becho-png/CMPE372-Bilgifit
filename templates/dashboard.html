@@ -3,12 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>BilgiFit — Dashboard</title>
+  <title>BilgiFit - Dashboard</title>
   <link rel="stylesheet" href="/static/style.css" />
 </head>
 <body class="page-dashboard">
   <div class="app">
-    <!-- SIDEBAR -->
     <aside class="sidebar">
       <div class="sidebar__top">
         <div class="brand">
@@ -17,7 +16,7 @@
         </div>
         <p class="sidebar__caption">campus sports center</p>
 
-        <nav class="nav" aria-label="Primary">"script.js
+        <nav class="nav" aria-label="Primary">
           <a href="#dashboard" class="nav__item nav__item--active" data-route="dashboard">Dashboard</a>
           <a href="#facility" class="nav__item" data-route="facility">Facility Booking</a>
           <a href="#sessions" class="nav__item" data-route="sessions">Group Sessions</a>
@@ -28,120 +27,37 @@
 
       <div class="occupancy-card">
         <p class="occupancy-card__label">Live occupancy</p>
-        <p class="occupancy-card__value"><span id="liveOccupied">8</span> / <span id="liveCapacity">10</span></p>
+        <p class="occupancy-card__value"><span id="liveOccupied">7</span> / <span id="liveCapacity">10</span></p>
       </div>
     </aside>
 
-    <!-- MAIN -->
     <main class="main">
       <header class="main__header">
         <div>
-          <h1 class="page-title">Dashboard</h1>
-          <p class="page-sub">Overview of your reservations and live facility state</p>
+          <h1 class="page-title" id="pageTitle">Dashboard</h1>
+          <p class="page-sub" id="pageSub">Overview of your reservations and live facility state</p>
         </div>
         <div class="search">
-          <input type="text" id="searchFacilities" placeholder="Search facilities..." aria-label="Search facilities" />
+          <input type="text" id="globalSearch" placeholder="Search facilities, sessions..." aria-label="Search" />
         </div>
       </header>
 
-      <!-- TOP ROW: NEXT RESERVATION + STAT CARDS -->
-      <section class="top-row">
-        <article class="next-card">
-          <p class="next-card__label">Next reservation</p>
-          <h2 class="next-card__title">Pilates Core</h2>
-          <p class="next-card__meta">Today / 18:00 / Studio A</p>
-          <button type="button" class="btn btn--primary next-card__btn" id="viewDetailsBtn">View details</button>
-        </article>
-
-        <article class="stat-card stat-card--accent">
-          <p class="stat-card__value" id="statBookings">4</p>
-          <p class="stat-card__label">Bookings this week</p>
-        </article>
-
-        <article class="stat-card">
-          <p class="stat-card__value"><span id="statOccupied">8</span>/<span id="statCapacity">10</span></p>
-          <p class="stat-card__label">Gym occupancy</p>
-        </article>
-
-        <article class="stat-card">
-          <p class="stat-card__value" id="statCourts">2</p>
-          <p class="stat-card__label">Open courts</p>
-        </article>
-      </section>
-
-      <!-- BOTTOM ROW: TABLE + QUICK ACTIONS -->
-      <section class="bottom-row">
-        <div class="reservations">
-          <h3 class="section-title">Upcoming reservations</h3>
-
-          <div class="table-card">
-            <table class="table" id="reservationsTable">
-              <thead>
-                <tr>
-                  <th>Facility</th>
-                  <th>Date</th>
-                  <th>Time</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody id="reservationsBody">
-                <tr>
-                  <td class="td-strong">Gym Floor</td>
-                  <td>Today</td>
-                  <td>17:00</td>
-                  <td><span class="badge badge--active">Active</span></td>
-                </tr>
-                <tr>
-                  <td class="td-strong">Basketball Court</td>
-                  <td>Thu</td>
-                  <td>19:00</td>
-                  <td><span class="badge badge--active">Active</span></td>
-                </tr>
-                <tr>
-                  <td class="td-strong">PT Deniz</td>
-                  <td>Fri</td>
-                  <td>12:00</td>
-                  <td><span class="badge badge--pending">Pending</span></td>
-                </tr>
-              </tbody>
-            </table>
-            <p class="table-empty" id="tableEmpty" hidden>No matching reservations.</p>
-          </div>
-        </div>
-
-        <aside class="quick-actions">
-          <h3 class="section-title">Quick actions</h3>
-
-          <button type="button" class="quick-action" data-action="reserve">
-            <span class="quick-action__body">
-              <span class="quick-action__title">Reserve facility</span>
-              <span class="quick-action__sub">Book available gym/court time</span>
-            </span>
-            <span class="quick-action__arrow" aria-hidden="true">&gt;</span>
-          </button>
-
-          <button type="button" class="quick-action" data-action="join">
-            <span class="quick-action__body">
-              <span class="quick-action__title">Join class</span>
-              <span class="quick-action__sub">Browse group sessions</span>
-            </span>
-            <span class="quick-action__arrow" aria-hidden="true">&gt;</span>
-          </button>
-
-          <button type="button" class="quick-action" data-action="trainer">
-            <span class="quick-action__body">
-              <span class="quick-action__title">Book trainer</span>
-              <span class="quick-action__sub">Find one-on-one support</span>
-            </span>
-            <span class="quick-action__arrow" aria-hidden="true">&gt;</span>
-          </button>
-        </aside>
-      </section>
-
-      <!-- TOAST -->
-      <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+      <section id="content" class="content-shell" aria-live="polite"></section>
     </main>
   </div>
+
+  <div class="modal-overlay" id="modalOverlay" hidden>
+    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <h2 class="modal__title" id="modalTitle">Confirm Reservation</h2>
+      <p class="modal__body" id="modalBody">Please confirm this booking.</p>
+      <div class="modal__actions">
+        <button type="button" class="btn btn--ghost" id="cancelModalBtn">Cancel</button>
+        <button type="button" class="btn btn--primary" id="confirmModalBtn">Confirm</button>
+      </div>
+    </section>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
   <script src="/static/dashboard.js"></script>
 </body>
