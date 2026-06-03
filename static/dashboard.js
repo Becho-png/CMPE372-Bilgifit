@@ -24,34 +24,10 @@
     },
   };
 
-  const facilities = [
-    { id: 1, name: "Gym Floor", type: "gym", time: "08:00-09:00", capacity: 10, booked: 6 },
-    { id: 2, name: "Boxing Ring 1", type: "boxing", time: "08:00-09:00", capacity: 4, booked: 4 },
-    { id: 3, name: "Basketball Court A", type: "basketball", time: "09:00-10:00", capacity: 10, booked: 3 },
-    { id: 4, name: "Gym Floor", type: "gym", time: "10:00-11:00", capacity: 10, booked: 8 },
-    { id: 5, name: "Boxing Ring 2", type: "boxing", time: "11:00-12:00", capacity: 4, booked: 2 },
-    { id: 6, name: "Basketball Court B", type: "basketball", time: "12:00-13:00", capacity: 10, booked: 10 },
-  ];
-
-  const groupSessions = [
-    { id: 1, name: "HIIT Blast", instructor: "Deniz Arslan", schedule: "Mon 17:00", count: 3, max: 15, level: "Intermediate" },
-    { id: 2, name: "Yoga Flow", instructor: "Aylin Cetin", schedule: "Tue 08:00", count: 8, max: 12, level: "All Levels" },
-    { id: 3, name: "Boxing Fundamentals", instructor: "Mert Duru", schedule: "Wed 18:00", count: 8, max: 8, level: "Beginner" },
-    { id: 4, name: "Pilates Core", instructor: "Pelin Teker", schedule: "Thu 18:00", count: 5, max: 10, level: "All Levels" },
-  ];
-
-  const trainers = [
-    { id: 1, name: "Melda Kara", specialty: "HIIT and Cardio", rating: "4.9", sessions: 120, available: true },
-    { id: 2, name: "Mert Duru", specialty: "Boxing", rating: "4.8", sessions: 95, available: true },
-    { id: 3, name: "Yusuf Ates", specialty: "Yoga and Mobility", rating: "4.7", sessions: 200, available: false },
-    { id: 4, name: "Can Ozturk", specialty: "Strength Training", rating: "4.9", sessions: 150, available: true },
-  ];
-
-  const reservations = [
-    { facility: "Gym Floor", date: "Today", time: "17:00", status: "Active" },
-    { facility: "Basketball Court A", date: "Thu", time: "19:00", status: "Active" },
-    { facility: "PT Melda Kara", date: "Fri", time: "12:00", status: "Pending" },
-  ];
+  let facilities = [];
+  let groupSessions = [];
+  let trainers = [];
+  let reservations = [];
 
   const joinedSessions = new Set();
   const bookedTrainers = new Set();
@@ -97,6 +73,29 @@
     if (action === "save-profile") saveProfile();
   });
 
+  async function loadDashboardData() {
+    try {
+      const [facilitiesRes, sessionsRes, trainersRes, reservationsRes] =
+        await Promise.all([
+          fetch("/api/facilities"),
+          fetch("/api/sessions"),
+          fetch("/api/trainers"),
+          fetch("/api/reservations")
+        ]);
+
+      facilities = await facilitiesRes.json();
+      groupSessions = await sessionsRes.json();
+      trainers = await trainersRes.json();
+      reservations = await reservationsRes.json();
+
+      navigate("dashboard");
+    } catch (error) {
+      console.error(error);
+      showToast("Database connection failed.");
+      navigate("dashboard");
+    }
+  }
+
   function navigate(route) {
     activeRoute = route;
     navItems.forEach((item) => item.classList.toggle("nav__item--active", item.dataset.route === route));
@@ -118,12 +117,20 @@
 
   function dashboardHTML(query) {
     const filtered = reservations.filter((reservation) => matches(query, reservation.facility));
+
+    const nextReservation = reservations[0] || {
+      facility: "No reservation",
+      date: "-",
+      time: "-",
+      status: "Pending"
+    };
+
     return `
       <section class="top-row">
         <article class="next-card">
           <p class="next-card__label">Next reservation</p>
-          <h2 class="next-card__title">Pilates Core</h2>
-          <p class="next-card__meta">Today / 18:00 / Studio A</p>
+          <h2 class="next-card__title">${escapeHTML(nextReservation.facility)}</h2>
+          <p class="next-card__meta">${escapeHTML(nextReservation.date)} / ${escapeHTML(nextReservation.time)} / ${escapeHTML(nextReservation.status)}</p>
           <button type="button" class="btn btn--primary next-card__btn" data-action="quick" data-route="sessions">View classes</button>
         </article>
         <article class="stat-card stat-card--accent">
@@ -473,7 +480,9 @@
   }
 
   function currentGymBooked() {
-    return Math.max.apply(null, facilities.filter((facility) => facility.type === "gym").map((facility) => facility.booked));
+    const gymSlots = facilities.filter((facility) => facility.type === "gym").map((facility) => facility.booked);
+    if (!gymSlots.length) return 0;
+    return Math.max.apply(null, gymSlots);
   }
 
   function openCourtCount() {
@@ -519,5 +528,5 @@
       .replace(/'/g, "&#039;");
   }
 
-  navigate("dashboard");
+  loadDashboardData();
 })();
