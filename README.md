@@ -1,117 +1,311 @@
-# CMPE372 BilgiFit
+# BilgiFit
 
-BilgiFit is a campus gym reservation system prototype for CMPE 372. The system is designed for students, instructors, and administrators who need a simple way to manage gym reservations, group sessions, personal trainer bookings, and facility capacity.
+## Project Overview
 
-## Current Status
+BilgiFit is a web-based fitness center management and reservation system developed as part of the CMPE 372 Software Engineering course project.
 
-This repository includes a Flask backend and a dynamic HTML/CSS/JavaScript dashboard prototype.
+The platform allows university students to register using their institutional email accounts, log into the system, reserve sports facilities, join group sessions, book personal trainers, and manage their reservations through a centralized dashboard.
 
-Implemented code features:
+The project follows a client-server architecture with a Flask backend, PostgreSQL database, and a responsive frontend interface.
 
-- Login and register screen with client-side validation.
-- Bilgi email domain validation for `@bilgi.edu.tr` and `@bilgiedu.net`.
-- Flask `/register` and `/login` routes with hashed password support.
-- Dashboard screen with reservation summary, live occupancy, quick actions, and reservation table.
-- Facility Booking screen with filters, capacity bars, disabled full slots, and confirmation modal.
-- Group Sessions screen with join logic and participant count updates.
-- Personal Trainers screen with booking state and unavailable trainer state.
-- My Profile screen with profile validation and save feedback.
-- Responsive layout for desktop and mobile viewports.
+---
 
-## Demo Mode
+## Features
 
-The app can run without a PostgreSQL database.
+### User Authentication
 
-If `DATABASE_URL` is not set, the backend uses an in-memory demo user store. This is useful for local testing and classroom demo purposes.
+* User registration
+* User login
+* Password hashing using Werkzeug
+* Institutional email validation
+* Session persistence through browser storage
 
-Demo mode behavior:
+### Facility Booking
 
-- New users can register from the UI.
-- Passwords are still hashed with Werkzeug.
-- Login works for users registered during the same server session.
-- Data is reset when the Flask server restarts.
-- This mode is not for production use.
+* View available facility slots
+* Capacity tracking
+* Real-time reservation creation
+* Facility occupancy monitoring
 
-Example demo flow:
+### Group Sessions
 
-1. Start the server.
-2. Open `http://127.0.0.1:5000`.
-3. Register with an email like `test@bilgi.edu.tr`.
-4. Log in with the same email and password.
-5. Use the dashboard prototype.
+* Browse available sessions
+* Join group activities
+* Participant tracking
+* Capacity management
 
-## PostgreSQL Mode
+### Personal Trainer Booking
 
-If `DATABASE_URL` is set, the backend connects to PostgreSQL with `psycopg2`.
+* Browse trainer profiles
+* View trainer specialties
+* Request trainer appointments
+* Availability tracking
 
-Expected current `users` table fields:
+### Dashboard
 
-- `id`
-- `fullname`
-- `email`
-- `password`
+* Reservation overview
+* Facility statistics
+* Occupancy information
+* Booking management
 
-The final report contains the larger planned database model for the full BilgiFit system, including `User`, `Facility`, `Reservation`, `GroupSession`, `PersonalTrainer`, `PTBooking`, and `SessionParticipant`.
+### Reservation Management
 
-## How to Run Locally
+* Create reservations
+* View reservations
+* Cancel reservations
+* Track reservation status
 
-Create and activate a virtual environment:
+---
 
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
+## Technologies Used
+
+### Frontend
+
+* HTML5
+* CSS3
+* JavaScript (Vanilla JS)
+
+### Backend
+
+* Python
+* Flask
+* Flask-CORS
+* Werkzeug
+
+### Database
+
+* PostgreSQL
+* Neon Database
+
+### Deployment
+
+* Render
+
+### Version Control
+
+* Git
+* GitHub
+
+---
+
+## System Architecture
+
+```text
+Frontend (HTML/CSS/JavaScript)
+            |
+            v
+      Flask REST API
+            |
+            v
+      Neon PostgreSQL
+            |
+            v
+      Persistent Data
 ```
 
-Install dependencies:
+The frontend communicates with the Flask backend through REST API endpoints. The backend processes requests, validates data, and performs database operations using PostgreSQL hosted on Neon.
+
+---
+
+## Database Design
+
+### Users
+
+Stores registered student accounts.
+
+| Column   | Type    |
+| -------- | ------- |
+| id       | SERIAL  |
+| fullname | VARCHAR |
+| email    | VARCHAR |
+| password | VARCHAR |
+
+### Facility Slots
+
+Stores facility availability information.
+
+| Column        | Type    |
+| ------------- | ------- |
+| id            | SERIAL  |
+| facility_name | VARCHAR |
+| facility_type | VARCHAR |
+| slot_time     | VARCHAR |
+| capacity      | INTEGER |
+| booked        | INTEGER |
+
+### Group Sessions
+
+Stores available group exercise sessions.
+
+| Column            | Type    |
+| ----------------- | ------- |
+| id                | SERIAL  |
+| session_name      | VARCHAR |
+| instructor        | VARCHAR |
+| schedule          | VARCHAR |
+| participant_count | INTEGER |
+| max_capacity      | INTEGER |
+| level             | VARCHAR |
+
+### Personal Trainers
+
+Stores trainer information.
+
+| Column        | Type    |
+| ------------- | ------- |
+| id            | SERIAL  |
+| trainer_name  | VARCHAR |
+| specialty     | VARCHAR |
+| rating        | NUMERIC |
+| session_count | INTEGER |
+| available     | BOOLEAN |
+
+### Reservations
+
+Stores facility, session, and trainer reservations.
+
+| Column            | Type    |
+| ----------------- | ------- |
+| id                | SERIAL  |
+| user_id           | INTEGER |
+| reservation_title | VARCHAR |
+| reservation_date  | VARCHAR |
+| reservation_time  | VARCHAR |
+| status            | VARCHAR |
+
+### Session Participants
+
+Stores users enrolled in group sessions.
+
+| Column     | Type    |
+| ---------- | ------- |
+| id         | SERIAL  |
+| user_id    | INTEGER |
+| session_id | INTEGER |
+
+### PT Bookings
+
+Stores personal trainer bookings.
+
+| Column       | Type    |
+| ------------ | ------- |
+| id           | SERIAL  |
+| user_id      | INTEGER |
+| trainer_id   | INTEGER |
+| booking_date | VARCHAR |
+| booking_time | VARCHAR |
+| status       | VARCHAR |
+
+---
+
+## API Endpoints
+
+### Authentication
+
+```http
+POST /register
+POST /login
+```
+
+### Facilities
+
+```http
+GET /api/facilities
+POST /api/reserve-facility
+```
+
+### Group Sessions
+
+```http
+GET /api/sessions
+POST /api/join-session
+```
+
+### Personal Trainers
+
+```http
+GET /api/trainers
+POST /api/book-trainer
+```
+
+### Reservations
+
+```http
+GET /api/reservations
+POST /api/cancel-reservation
+```
+
+### Statistics
+
+```http
+GET /api/stats
+```
+
+---
+
+## Deployment
+
+The project is deployed using Render.
+
+Backend services run through Flask and connect to a Neon-hosted PostgreSQL database using environment variables configured within Render.
+
+---
+
+## Installation
+
+### Clone Repository
+
+```bash
+git clone https://github.com/Becho-png/CMPE372-Bilgifit.git
+```
+
+### Install Dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-Run the Flask app:
+### Configure Environment Variable
+
+```bash
+DATABASE_URL=your_neon_connection_string
+```
+
+### Run Application
 
 ```bash
 python app.py
 ```
 
-Open:
+---
 
-```text
-http://127.0.0.1:5000
-```
+## Team Members
 
-## Project Files
+CMPE 372 – Software Engineering Project Team
 
-- `app.py` - Flask routes and authentication logic.
-- `templates/index.html` - Login/Register page.
-- `templates/dashboard.html` - Dashboard application shell.
-- `static/script.js` - Login/Register page interaction logic.
-- `static/dashboard.js` - Dashboard, booking, session, trainer, and profile interaction logic.
-- `static/style.css` - Shared UI styling and responsive layout.
-- `Group3_CMPE_FinalProject.docx` - Final CMPE 372 project report.
+BilgiFit was developed collaboratively as part of the course requirements.
 
-## Final Report
+---
 
-The final report combines previous assignments and the final project requirements. It includes:
+## Future Improvements
 
-- Project overview
-- Personas
-- User stories
-- User journey map
-- Information architecture
-- Site map
-- Page content inventory
-- Figma prototype link
-- Accessibility review
-- Dynamic UI logic
-- Database model and ER diagram
-- UI-database CRUD mapping
-- Sample SQL logic
-- Front-end implementation summary
-- Final reflection
+* Email verification
+* Password recovery
+* Role-based access control
+* Trainer schedules
+* Facility-specific time management
+* Mobile application support
+* Analytics dashboard
+* Notification system
 
-Figma prototype:
+---
 
-```text
-https://www.figma.com/design/rs4aRJcavArfGf8ne2doTo/BilgiFit-Assignment-3---High-Fidelity-UI?node-id=8-3
-```
+## Live Demo
+
+You can test the deployed application here:
+
+https://cmpe372-bilgifit-1.onrender.com/
+
+## License
+
+This project was developed for academic purposes as part of the CMPE 372 Software Engineering course.
