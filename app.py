@@ -16,6 +16,7 @@ CORS(app)
 DATABASE_URL = os.environ.get("DATABASE_URL")
 DEMO_USERS = {}
 
+
 def get_db_connection():
     if not DATABASE_URL:
         return None
@@ -23,13 +24,16 @@ def get_db_connection():
         raise RuntimeError("psycopg2 is required when DATABASE_URL is configured.")
     return psycopg2.connect(DATABASE_URL)
 
+
 @app.route("/")
 def index():
     return render_template("index.html")
 
+
 @app.route("/dashboard")
 def dashboard():
     return render_template("dashboard.html")
+
 
 @app.route("/register", methods=["POST"])
 def register():
@@ -111,6 +115,7 @@ def register():
             "message": str(e)
         }), 500
 
+
 @app.route("/login", methods=["POST"])
 def login():
     data = request.get_json()
@@ -172,6 +177,184 @@ def login():
 
     except Exception as e:
         return jsonify({"success": False, "message": str(e)}), 500
+
+
+@app.route("/api/facilities", methods=["GET"])
+def get_facilities():
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        cur.execute("""
+            SELECT id, facility_name, facility_type, slot_time, capacity, booked
+            FROM facility_slots
+            ORDER BY id
+        """)
+
+        rows = cur.fetchall()
+
+        facilities = []
+        for row in rows:
+            facilities.append({
+                "id": row[0],
+                "name": row[1],
+                "type": row[2],
+                "time": row[3],
+                "capacity": row[4],
+                "booked": row[5]
+            })
+
+        cur.close()
+        conn.close()
+
+        return jsonify(facilities), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/sessions", methods=["GET"])
+def get_sessions():
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        cur.execute("""
+            SELECT id, session_name, instructor, schedule, participant_count, max_capacity, level
+            FROM group_sessions
+            ORDER BY id
+        """)
+
+        rows = cur.fetchall()
+
+        sessions = []
+        for row in rows:
+            sessions.append({
+                "id": row[0],
+                "name": row[1],
+                "instructor": row[2],
+                "schedule": row[3],
+                "count": row[4],
+                "max": row[5],
+                "level": row[6]
+            })
+
+        cur.close()
+        conn.close()
+
+        return jsonify(sessions), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/trainers", methods=["GET"])
+def get_trainers():
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        cur.execute("""
+            SELECT id, trainer_name, specialty, rating, session_count, available
+            FROM personal_trainers
+            ORDER BY id
+        """)
+
+        rows = cur.fetchall()
+
+        trainers = []
+        for row in rows:
+            trainers.append({
+                "id": row[0],
+                "name": row[1],
+                "specialty": row[2],
+                "rating": str(row[3]),
+                "sessions": row[4],
+                "available": row[5]
+            })
+
+        cur.close()
+        conn.close()
+
+        return jsonify(trainers), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/reservations", methods=["GET"])
+def get_reservations():
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        cur.execute("""
+            SELECT reservation_title, reservation_date, reservation_time, status
+            FROM reservations
+            ORDER BY id
+        """)
+
+        rows = cur.fetchall()
+
+        reservations = []
+        for row in rows:
+            reservations.append({
+                "facility": row[0],
+                "date": row[1],
+                "time": row[2],
+                "status": row[3]
+            })
+
+        cur.close()
+        conn.close()
+
+        return jsonify(reservations), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/stats", methods=["GET"])
+def get_stats():
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        cur.execute("""
+            SELECT COALESCE(MAX(booked), 0)
+            FROM facility_slots
+            WHERE facility_type = 'gym'
+        """)
+        gym_occupied = cur.fetchone()[0]
+
+        cur.execute("""
+            SELECT COUNT(*)
+            FROM facility_slots
+            WHERE facility_type = 'basketball'
+            AND booked < capacity
+        """)
+        open_courts = cur.fetchone()[0]
+
+        cur.execute("""
+            SELECT COUNT(*)
+            FROM reservations
+            WHERE status IN ('Active', 'Pending')
+        """)
+        bookings_this_week = cur.fetchone()[0]
+
+        cur.close()
+        conn.close()
+
+        return jsonify({
+            "gymOccupied": gym_occupied,
+            "gymCapacity": 10,
+            "openCourts": open_courts,
+            "bookingsThisWeek": bookings_this_week
+        }), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 
 if __name__ == "__main__":
     app.run(debug=True)
