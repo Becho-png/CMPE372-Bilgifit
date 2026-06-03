@@ -378,52 +378,127 @@
     modalOverlay.hidden = true;
   }
 
-  function confirmReservation() {
-    const facility = facilities.find((item) => item.id === pendingFacilityId);
-    if (!facility) return;
-    if (facility.booked >= facility.capacity) {
-      showToast("This slot is already full.");
-      closeModal();
-      renderRoute();
+  async function confirmReservation() {
+  const user = JSON.parse(localStorage.getItem("bilgifitUser"));
+
+  try {
+    const response = await fetch("/api/reserve-facility", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        user_id: user.id,
+        facility_id: pendingFacilityId
+      })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      showToast(data.message);
       return;
     }
-    facility.booked += 1;
-    reservations.unshift({
-      facility: facility.name,
-      date: "Today",
-      time: facility.time.split("-")[0],
-      status: "Active",
-    });
+
     showToast("Reservation confirmed.");
     closeModal();
-    navigate("dashboard");
-  }
+    await loadDashboardData();
 
-  function joinSession(id) {
-    const session = groupSessions.find((item) => item.id === id);
-    if (!session || session.count >= session.max || joinedSessions.has(id)) return;
-    session.count += 1;
-    joinedSessions.add(id);
-    reservations.unshift({ facility: session.name, date: "This week", time: session.schedule, status: "Active" });
+  } catch (error) {
+    showToast("Server error.");
+  }
+}
+
+  async function joinSession(id) {
+  const user = JSON.parse(localStorage.getItem("bilgifitUser"));
+
+  try {
+    const response = await fetch("/api/join-session", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        user_id: user.id,
+        session_id: id
+      })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      showToast(data.message);
+      return;
+    }
+
     showToast("Group session joined.");
-    renderRoute();
-  }
+    await loadDashboardData();
 
-  function bookTrainer(id) {
-    const trainer = trainers.find((item) => item.id === id);
-    if (!trainer || !trainer.available || bookedTrainers.has(id)) return;
-    bookedTrainers.add(id);
-    reservations.unshift({ facility: "PT " + trainer.name, date: "Fri", time: "12:00", status: "Pending" });
+  } catch (error) {
+    showToast("Server error.");
+  }
+}
+
+  async function bookTrainer(id) {
+  const user = JSON.parse(localStorage.getItem("bilgifitUser"));
+
+  try {
+    const response = await fetch("/api/book-trainer", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        user_id: user.id,
+        trainer_id: id
+      })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      showToast(data.message);
+      return;
+    }
+
     showToast("Trainer booking requested.");
-    renderRoute();
-  }
+    await loadDashboardData();
 
-  function cancelReservation(index) {
-    if (!reservations[index]) return;
-    reservations[index].status = "Cancelled";
-    showToast("Reservation cancelled.");
-    renderRoute();
+  } catch (error) {
+    showToast("Server error.");
   }
+}
+
+  async function cancelReservation(index) {
+  const reservation = reservations[index];
+
+  if (!reservation) return;
+
+  try {
+    const response = await fetch("/api/cancel-reservation", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        reservation_id: reservation.id
+      })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      showToast(data.message);
+      return;
+    }
+
+    showToast("Reservation cancelled.");
+    await loadDashboardData();
+
+  } catch (error) {
+    showToast("Server error.");
+  }
+}
 
   function saveProfile() {
     const name = document.getElementById("profileName");
